@@ -1,0 +1,152 @@
+---
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+## Reproducible Research-1
+
+## Mehmet Simsek
+
+### Question 1: Libraries and Data
+```{r}
+
+
+library(ggplot2)
+library(dplyr)
+Sys.setlocale("LC_TIME", "English")
+Data <- read.csv("activity.csv", colClasses=c("numeric", "Date", "numeric"))
+```
+
+
+### Question 2: What is mean total number of steps taken per day?
+```{r}
+data <- Data[!(is.na(Data$steps)), ]
+
+totalSteps <- aggregate(steps ~ date, data, sum)
+```
+
+```{r plot-1}
+paletteRed <- colorRampPalette(c("deeppink", "darkred", "deeppink"))
+hist(totalSteps$steps, breaks=25, xlab="Num. of Steps Taken", 
+     main="Histogram of the Total Number of Steps Taken per Day",
+     col=paletteRed(22), family="serif")
+
+total_num_steps <- summarise(totalSteps, meanOfTotalSteps=mean(totalSteps$steps),
+                               medianOfTotalSteps=median(totalSteps$steps))
+print(total_num_steps)
+```
+
+
+### Question 3: What is the average daily activity pattern?
+```{r}
+meanInterval <- aggregate(steps ~ interval, data, mean)
+```
+
+```{r plot-2}
+plot(x=meanInterval$interval, y=meanInterval$steps, type="l",
+     main="Average Steps Taken per Interval",
+     ylab="Num. of Steps", xlab="Intervals (in 5 mins)",
+     col="darkred", lwd=1.5, family="serif")
+```
+
+
+### Question 4: Imputation
+```{r}
+imputedData <- Data
+for(x in 1:17568) {
+  if(is.na(Data[x, 1])==TRUE) {
+    imputedData[x, 1] <- meanInterval[meanInterval$interval %in% imputedData[x, 3], 2]
+  }
+}
+
+
+imputedTotalStep <- aggregate(steps ~ date, imputedData, sum)
+```
+
+
+```{r plot-3}
+paletteBlue <- colorRampPalette(c("skyblue", "darkblue", "skyblue"))
+hist(imputedTotalStep$steps, breaks=20, xlab="Num. of Steps Taken", 
+     main="Histogram of Total Number of Steps Taken per Day (With Imputed Values)",
+     col=paletteBlue(22), family="serif")
+
+meanOfTotalSteps=mean(imputedTotalStep$steps)
+print(meanOfTotalSteps)
+medianOfTotalSteps=median(imputedTotalStep$steps)
+print(medianOfTotalSteps)
+
+```
+
+```{r plot-4}
+paletteBlue <- colorRampPalette(c("skyblue", "darkblue", "skyblue"))
+hist(totalSteps$steps, breaks=25, xlab="Num. of Steps Taken", 
+     main="Histograms of Total Number of Steps Taken per Day (Imputed)",
+     col=paletteBlue(22), family="serif")
+```
+
+### Question 5: Are there differences in activity patterns between weekdays and weekends?
+```{r}
+daysData <- imputedData
+daysData$days <- weekdays(daysData$date)
+daysData$weekday <- as.character(rep(0, times=17568))
+for(x in 1:17568) {
+  if(daysData[x, 4] %in% c("Saturday", "Sunday")) {
+    daysData[x, 5] <- "weekend"
+  } else {
+    daysData[x, 5] <- "weekday"
+  }
+}
+daysData$weekday <- factor(daysData$weekday)
+
+
+weekday <- daysData[daysData$weekday=="weekday", ]
+weekend <- daysData[daysData$weekday=="weekend", ]
+
+weekdayMean <- aggregate(steps ~ interval, weekday, mean)
+```
+
+
+```{r}
+weekendMean <- aggregate(steps ~ interval, weekend, mean)
+
+```
+
+```{r plot-5}
+par(mfrow=c(2, 1), mar=c(4, 4.1, 3, 2.1))
+plot(weekdayMean$interval, weekdayMean$steps, type="l",
+     main="Average Steps Taken per Interval, for Weekdays",
+     xlab="Intervals (in 5 mins)", ylab="Number of Steps", family="serif",
+     col="darkred", lwd=1.5, ylim=c(0, 230))
+plot(weekendMean$interval, weekendMean$steps, type="l",
+     main="Average Steps Taken per Interval, for Weekends",
+     xlab="Intervals (in 5 mins)", ylab="Number of Steps", family="serif",
+     col="darkblue", lwd=1.5, ylim=c(0, 230))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r setup, include=FALSE}
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
